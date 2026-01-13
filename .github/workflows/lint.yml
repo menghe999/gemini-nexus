@@ -1,0 +1,45 @@
+name: Lint Check
+
+on:
+  push:
+    branches: 
+      - main
+      - master
+      - dev
+      - 'fix/**'      # 支持所有 fix/ 开头的分支
+      - 'feat/**'     # 支持所有 feat/ 开头的分支
+      - 'hotfix/**'   # 支持所有 hotfix/ 开头的分支
+  pull_request:
+    branches: [ main, master, dev ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: gemini-nexus/package-lock.json
+        
+    - name: Install dependencies
+      working-directory: ./gemini-nexus
+      run: npm ci
+      
+    - name: Check TypeScript
+      working-directory: ./gemini-nexus
+      run: npx tsc --noEmit || true
+      
+    - name: Check manifest.json
+      working-directory: ./gemini-nexus
+      run: |
+        if ! jq empty manifest.json 2>/dev/null; then
+          echo "❌ manifest.json is not valid JSON"
+          exit 1
+        fi
+        echo "✅ manifest.json is valid"

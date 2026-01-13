@@ -1,0 +1,92 @@
+name: Release Extension
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v4.2.3)'
+        required: true
+        type: string
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: gemini-nexus/package-lock.json
+        
+    - name: Install dependencies
+      working-directory: ./gemini-nexus
+      run: npm ci
+      
+    - name: Build extension
+      working-directory: ./gemini-nexus
+      run: npm run build
+      
+    - name: Get version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "VERSION=${{ inputs.version }}" >> $GITHUB_OUTPUT
+        else
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+      
+    - name: Package extension
+      working-directory: ./gemini-nexus
+      run: |
+        VERSION=${{ steps.version.outputs.VERSION }}
+        zip -r gemini-nexus-${VERSION}.zip \
+          dist/ \
+          background/ \
+          content/ \
+          css/ \
+          lib/ \
+          services/ \
+          sidepanel/ \
+          sandbox/ \
+          logo.png \
+          manifest.json \
+          metadata.json \
+          -x "*.map" "node_modules/*" ".git/*"
+      
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.VERSION }}
+        name: Release ${{ steps.version.outputs.VERSION }}
+        draft: false
+        prerelease: false
+        files: |
+          gemini-nexus/gemini-nexus-${{ steps.version.outputs.VERSION }}.zip
+        body: |
+          ## Gemini Nexus ${{ steps.version.outputs.VERSION }}
+          
+          ### 安装方法
+          1. 下载 `gemini-nexus-${{ steps.version.outputs.VERSION }}.zip`
+          2. 解压到本地目录
+          3. 打开 Chrome 浏览器，访问 `chrome://extensions/`
+          4. 开启右上角的"开发者模式"
+          5. 点击"加载已解压的扩展程序"，选择解压后的文件夹
+          
+          ### Installation
+          1. Download `gemini-nexus-${{ steps.version.outputs.VERSION }}.zip`
+          2. Extract to a local directory
+          3. Open Chrome and go to `chrome://extensions/`
+          4. Enable "Developer mode" in the top right
+          5. Click "Load unpacked" and select the extracted folder
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
