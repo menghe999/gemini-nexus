@@ -6,9 +6,12 @@ on:
       - main
       - master
       - dev
-      - 'fix/**'      # 支持所有 fix/ 开头的分支
-      - 'feat/**'     # 支持所有 feat/ 开头的分支
-      - 'hotfix/**'   # 支持所有 hotfix/ 开头的分支
+      - 'fix-**'      # 支持 fix-xxx 格式的分支
+      - 'fix/**'      # 支持 fix/xxx 格式的分支
+      - 'feat-**'     # 支持 feat-xxx 格式的分支
+      - 'feat/**'     # 支持 feat/xxx 格式的分支
+      - 'hotfix-**'   # 支持 hotfix-xxx 格式的分支
+      - 'hotfix/**'   # 支持 hotfix/xxx 格式的分支
   pull_request:
     branches: [ main, master, dev ]
 
