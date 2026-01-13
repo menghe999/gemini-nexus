@@ -49,8 +49,27 @@ jobs:
       working-directory: ./gemini-nexus
       run: |
         VERSION=${{ steps.version.outputs.VERSION }}
-        zip -r gemini-nexus-${VERSION}.zip \
-          dist/ \
+        
+        # 创建临时打包目录
+        TEMP_DIR="../temp-package"
+        mkdir -p "$TEMP_DIR"
+        
+        # 复制所有必要的文件和目录
+        cp -r background "$TEMP_DIR/"
+        cp -r content "$TEMP_DIR/"
+        cp -r css "$TEMP_DIR/"
+        cp -r lib "$TEMP_DIR/"
+        cp -r services "$TEMP_DIR/"
+        cp -r sidepanel "$TEMP_DIR/"
+        cp -r sandbox "$TEMP_DIR/"
+        cp -r dist "$TEMP_DIR/"
+        cp logo.png "$TEMP_DIR/"
+        cp manifest.json "$TEMP_DIR/"
+        cp metadata.json "$TEMP_DIR/"
+        
+        # 打包成 ZIP（从临时目录内部打包，确保根目录正确）
+        cd "$TEMP_DIR"
+        zip -r ../gemini-nexus/gemini-nexus-${VERSION}.zip \
           background/ \
           content/ \
           css/ \
@@ -58,10 +77,16 @@ jobs:
           services/ \
           sidepanel/ \
           sandbox/ \
+          dist/ \
           logo.png \
           manifest.json \
           metadata.json \
-          -x "*.map" "node_modules/*" ".git/*"
+          -x "*.map" "*/.DS_Store"
+        
+        cd ..
+        rm -rf "$TEMP_DIR"
+        
+        echo "✅ 打包完成: gemini-nexus-${VERSION}.zip"
       
     - name: Create Release
       uses: softprops/action-gh-release@v1
